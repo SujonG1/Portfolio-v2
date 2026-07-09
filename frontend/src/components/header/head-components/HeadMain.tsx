@@ -10,7 +10,7 @@ const NavMain = () => {
   useIntroAnimation(container)
 
   return (
-    <div className="flex justify-between bg-slate-950/70 backdrop-blur-md w-full h-17 p-4"
+    <div className="flex justify-between bg-slate-950/10 backdrop-blur-md w-full h-17 p-4"
     ref={container}>
       <div className="flex justify-between text-4xl font-bold items-center bg-gradient-to-r from-sky-600 to-purple-800 bg-clip-text text-transparent opacity-100 nav-logo" >
         <img
