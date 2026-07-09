@@ -1,19 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 
-/**
- * ParticleBackground — "deep space" starfield
- * - Soft, slowly-drifting nebula fog (layered radial gradients, additive blend) gives the
- *   hazy/foggy backdrop instead of a flat dark background.
- * - Stars are drawn from pre-rendered glow sprites (radial-gradient canvases, blitted with
- *   drawImage) rather than per-frame arcs + shadowBlur, so the soft glow is essentially free
- *   at render time — this is what gives each star its blurred, luminous look.
- * - A handful of stars are "bright" stars with a larger glow + a thin four-point sparkle,
- *   like the brightest points in a real night sky.
- * - Constellation lines connect nearby stars using a spatial grid (not O(n^2)), kept faint.
- * - Canvas covers the full scrollable page (not just the viewport) and tracks page height.
- * - Motion is delta-time based and each star has its own independent drift/velocity.
- */
-
 const ParticleBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 

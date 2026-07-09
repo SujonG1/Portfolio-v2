@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <div className="w-full h-40 bg-slate-950 flex justify-between items-center border-t-2 border-slate-700 p-5">
+    <div className="w-full h-40 bg-slate-950/10 backdrop-blur-md flex justify-between items-center border-t-2 border-slate-700 p-5 relative">
       <div>
         <div className="flex rounded justify-between w-30">
           <button className="text-2xl text-slate-300">

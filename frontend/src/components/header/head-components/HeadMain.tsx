@@ -22,34 +22,34 @@ const NavMain = () => {
         </Link>
       </div>
       <div className="text-slate-400 flex items-center font-roboto gap-5">
-        <Link to="/about" className="nav-link group p-3 text-lg text-slate-400 hover:text-sky-400 transition-colors duration-300 ease-in-out relative">
+        <Link to="/about" className="nav-link group p-3 text-lg text-slate-400 hover:text-cyan-400 transition-colors duration-300 ease-in-out relative">
           About
-          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-sky-400 transition-all duration-300 group-hover:w-full">
+          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full">
           </div>
         </Link>
-        <Link to="/projects"  className="nav-link group p-3 text-lg text-slate-400 hover:text-sky-400 transition-colors duration-300 ease-in-out relative">
+        <Link to="/projects"  className="nav-link group p-3 text-lg text-slate-400 hover:text-cyan-400 transition-colors duration-300 ease-in-out relative">
           Projects
-          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-sky-400 transition-all duration-300 group-hover:w-full">
+          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full">
           </div>
         </Link>
-        <Link to="/lab" className="nav-link group p-3 text-lg text-slate-400 hover:text-sky-400 transition-colors duration-300 ease-in-out relative">
+        <Link to="/lab" className="nav-link group p-3 text-lg text-slate-400 hover:text-cyan-400 transition-colors duration-300 ease-in-out relative">
           Lab
-          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-sky-400 transition-all duration-300 group-hover:w-full">
+          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full">
           </div>
         </Link>
-        <Link to="/blog" className="nav-link group p-3 text-lg text-slate-400 hover:text-sky-400 transition-colors duration-300 ease-in-out relative" >
+        <Link to="/blog" className="nav-link group p-3 text-lg text-slate-400 hover:text-cyan-400 transition-colors duration-300 ease-in-out relative">
           Blog
-          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-sky-400 transition-all duration-300 group-hover:w-full">
+          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full">
           </div>
         </Link>
-        <Link to="/achievements" className="nav-link group p-3 text-lg text-slate-400 hover:text-sky-400 transition-colors duration-300 ease-in-out relative">
+        <Link to="/achievements" className="nav-link group p-3 text-lg text-slate-400 hover:text-cyan-400 transition-colors duration-300 ease-in-out relative">
           Achievements
-          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-sky-400 transition-all duration-300 group-hover:w-full">
+          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full">
           </div>
         </Link>
-        <Link to="/contact" className="nav-link group p-3 text-lg text-slate-400 hover:text-sky-400 transition-colors duration-300 ease-in-out relative">
+        <Link to="/contact" className="nav-link group p-3 text-lg text-slate-400 hover:text-cyan-400 transition-colors duration-300 ease-in-out relative">
           Contact
-          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-sky-400 transition-all duration-300 group-hover:w-full">
+          <div className="absolute left-0 bottom-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full">
           </div>
         </Link>
       </div>
