@@ -21,10 +21,10 @@ const HeroMain = () => {
           Bringing ideas to life with Machine Learning and Web Developement.
         </p>
         <div className="mt-5 mb-15 hero-btn">
-          <button className="bg-gradient-to-tr from-sky-600 to-purple-800 p-3 rounded-2xl text-white font-poppins font-semibold mr-2 cursor-pointer transition-transform duration-300 ease-in-out !hover:-translate-y-2">
+          <button className="bg-linear-to-tr from-sky-600 to-purple-800 py-3 px-5 rounded-full text-white font-poppins font-semibold mr-2 cursor-pointer transition-transform duration-300 ease-in-out !hover:-translate-y-2">
             Send Message
           </button>
-          <button className="border-1 text-white font-poppins font-semibold border-white p-3 rounded-2xl ml-2 cursor-pointer transition-transform duration-300 ease-in-out !hover:-translate-y-2">
+          <button className="border-1 text-white font-poppins font-semibold border-white py-3 px-5 rounded-full ml-2 cursor-pointer transition-transform duration-300 ease-in-out !hover:-translate-y-2">
             Explore Lab <i className="ri-arrow-right-line"></i>
           </button>
         </div>

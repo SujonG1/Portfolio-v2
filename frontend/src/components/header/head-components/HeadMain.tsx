@@ -54,12 +54,12 @@ const NavMain = () => {
         </Link>
       </div>
       <div className="flex justify-between items-center gap-5 flex-wrap">
-        <button className="nav-btn px-4 py-2 rounded-xl text-slate-300 text-sm cursor-pointer flex items-center gap-2 border border-gray-600 whitespace-nowrap hover:text-slate-900 hover:bg-slate-300 transition-colors duration-600 ease-in-out">
+        <button className="nav-btn px-4 py-2 rounded-full text-slate-300 text-sm cursor-pointer flex items-center gap-2 border border-gray-600 whitespace-nowrap hover:text-slate-900 hover:bg-slate-300 transition-colors duration-600 ease-in-out">
           <i className="ri-download-line"></i>
           <span>Resume</span>
         </button>
 
-        <button className="nav-btn px-6 h-10 bg-gradient-to-tr from-sky-600 to-purple-800 text-white text-l font-semibold font-poppins rounded-xl cursor-pointer hover:from-purple-800 hover:to-sky-600 transition-colors duration-600 ease-in-out">
+        <button className="nav-btn px-6 h-10 bg-linear-to-tr from-sky-600 to-purple-800 text-white text-l font-semibold font-poppins rounded-full cursor-pointer hover:from-purple-800 hover:to-sky-600 transition-colors duration-600 ease-in-out">
           Hire Me
         </button>
       </div>
