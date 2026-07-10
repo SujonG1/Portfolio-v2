@@ -22,7 +22,7 @@ const HeroMain = () => {
           "Bringing ideas to life."
         </h6>
         <p className="hero-para text-slate-400 w-125 text-center text-lg font-poppins">
-           A Fullstack Web Developer and <i className="ri-ai text-transparent bg-gradient-to-tr from-sky-500 to-purple-800 bg-clip-text font-bold"></i>/Ml Engineer, based in 
+           Fullstack Web Developer & <i className="ri-ai text-transparent bg-gradient-to-tr from-sky-500 to-purple-800 bg-clip-text font-bold"></i>/Ml Engineer, based in 
            <br></br>
            <i className="ri-map-pin-fill text-transparent bg-gradient-to-tr from-sky-500 to-purple-800 bg-clip-text font-bold"></i> Kolkata, India.
         </p>

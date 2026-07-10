@@ -17,9 +17,16 @@ const ParticleBackground = () => {
     let rafId = 0;
     let lastTime = performance.now();
     let resizeTimeout: number | undefined;
+    let nextShootingStarAt = performance.now() + 10000 + Math.random() * 5000;
 
+    // Target = raw cursor position. Mouse = eased/smoothed position that
+    // everything actually reacts to, so motion never snaps or jitters.
+    const targetMouse = { x: -10000, y: -10000 };
     const mouse = { x: -10000, y: -10000 };
-    const hoverRadius = 180;
+    let mouseActive = 0; // 0..1, eased presence so the glow fades in/out softly
+
+    const hoverRadius = 190;
+    const coreRadius = 140; // inner radius where the bright "cluster" forms
     const maxLineDistance = 110;
     const maxLineDistanceSq = maxLineDistance * maxLineDistance;
 
@@ -60,56 +67,133 @@ const ParticleBackground = () => {
       return sprite;
     }
 
+    // Cooler, more blue/violet-white palette to match the reference image.
     const TINTS = [
+      'rgba(199,210,254,0.55)', // soft indigo
       'rgba(224,231,255,0.5)', // cool blue-white
-      'rgba(255,244,224,0.5)', // warm ivory
-      'rgba(248,250,252,0.5)', // neutral white
-      'rgba(199,210,254,0.45)', // soft indigo
+      'rgba(165,180,252,0.5)', // periwinkle
+      'rgba(248,250,252,0.45)', // neutral white
     ];
+
+    // Small helper: exponential ease-towards, framerate independent.
+    function approach(current: number, target: number, rate: number, dt: number) {
+      const t = 1 - Math.pow(1 - rate, dt);
+      return current + (target - current) * t;
+    }
 
     class Star {
       x: number;
       y: number;
       vx: number;
       vy: number;
+      driftX: number;
+      driftY: number;
+      driftTimer: number;
       maxSpeed: number;
       coreR: number;
       glowR: number;
       tint: string;
       bright: boolean;
+      sparkles: boolean;
       maxAlpha: number;
       minAlpha: number;
       alpha: number;
+      twinklePhase: number;
       twinkleSpeed: number;
       sparklePhase: number;
+
+      // Shooting-star state: any ambient star can be temporarily turned
+      // into a shooting star rather than spawning a separate object.
+      isShooting: boolean;
+      shootVx: number;
+      shootVy: number;
+      shootLife: number;
+      shootMaxLife: number;
+      shootLength: number;
 
       constructor() {
         this.x = Math.random() * W;
         this.y = Math.random() * H;
         this.vx = (Math.random() - 0.5) * 0.35;
         this.vy = (Math.random() - 0.5) * 0.35;
+        this.driftX = this.vx;
+        this.driftY = this.vy;
+        this.driftTimer = Math.random() * 4000;
         this.maxSpeed = 0.2 + Math.random() * 0.3;
-        this.bright = Math.random() < 0.08;
-        this.coreR = this.bright ? Math.random() * 0.6 + 1.1 : Math.random() * 0.5 + 0.5;
-        this.glowR = this.bright ? this.coreR * 9 : this.coreR * 5;
+        this.bright = Math.random() < 0.12;
+        // A wider slice of stars now get the four-point sparkle flare,
+        // like the crisp glinting points in the reference image.
+        this.sparkles = this.bright || Math.random() < 0.18;
+        this.coreR = this.bright ? Math.random() * 0.7 + 1.2 : Math.random() * 0.5 + 0.5;
+        this.glowR = this.bright ? this.coreR * 10 : this.coreR * 5.5;
         this.tint = TINTS[Math.floor(Math.random() * TINTS.length)];
-        this.maxAlpha = this.bright ? Math.random() * 0.25 + 0.75 : Math.random() * 0.4 + 0.35;
-        this.minAlpha = this.bright ? 0.45 : Math.random() * 0.1 + 0.05;
+        this.maxAlpha = this.bright ? Math.random() * 0.2 + 0.8 : Math.random() * 0.4 + 0.35;
+        this.minAlpha = this.bright ? 0.5 : Math.random() * 0.1 + 0.05;
         this.alpha = Math.random() * (this.maxAlpha - this.minAlpha) + this.minAlpha;
-        this.twinkleSpeed = (Math.random() - 0.5) * 0.015;
+        this.twinklePhase = Math.random() * Math.PI * 2;
+        this.twinkleSpeed = 0.0006 + Math.random() * 0.0009;
         this.sparklePhase = Math.random() * Math.PI * 2;
+
+        this.isShooting = false;
+        this.shootVx = 0;
+        this.shootVy = 0;
+        this.shootLife = 0;
+        this.shootMaxLife = 0;
+        this.shootLength = 0;
       }
 
-      update(dt: number) {
-        // Independent random-walk so no two stars share a drift pattern.
-        this.vx += (Math.random() - 0.5) * 0.015;
-        this.vy += (Math.random() - 0.5) * 0.015;
-        const speed = Math.hypot(this.vx, this.vy);
-        if (speed > this.maxSpeed) {
-          const scale = this.maxSpeed / speed;
-          this.vx *= scale;
-          this.vy *= scale;
+      // Turns this ordinary star into a fast-streaking shooting star for
+      // a short burst, then it settles back into normal ambient drifting.
+      startShooting() {
+        this.isShooting = true;
+        const goingRight = Math.random() < 0.5;
+        const speed = 9 + Math.random() * 6;
+        const angle = goingRight
+          ? (Math.PI / 5) + Math.random() * (Math.PI / 10)
+          : Math.PI - (Math.PI / 5) - Math.random() * (Math.PI / 10);
+        this.shootVx = Math.cos(angle) * speed * (goingRight ? 1 : -1);
+        this.shootVy = Math.sin(angle) * speed;
+        this.shootMaxLife = 55 + Math.random() * 20;
+        this.shootLife = this.shootMaxLife;
+        this.shootLength = 90 + Math.random() * 70;
+      }
+
+      update(dt: number, now: number) {
+        if (this.isShooting) {
+          this.x += this.shootVx * dt;
+          this.y += this.shootVy * dt;
+          this.shootLife -= dt;
+          const margin = this.shootLength + 40;
+          const offscreen = this.x < -margin || this.x > W + margin || this.y < -margin || this.y > H + margin;
+          if (this.shootLife <= 0 || offscreen) {
+            // Streak finished — settle back into calm ambient drifting
+            // from wherever it ended up, no teleporting/respawning.
+            this.isShooting = false;
+            this.x = Math.min(Math.max(this.x, 0), W);
+            this.y = Math.min(Math.max(this.y, 0), H);
+            const angle = Math.random() * Math.PI * 2;
+            const speed = this.maxSpeed * (0.4 + Math.random() * 0.6);
+            this.driftX = Math.cos(angle) * speed;
+            this.driftY = Math.sin(angle) * speed;
+            this.vx = this.driftX;
+            this.vy = this.driftY;
+            this.driftTimer = 2500 + Math.random() * 3000;
+          }
+
+          this.twinklePhase += this.twinkleSpeed * dt * 16.6667;
+          return;
         }
+
+        this.driftTimer -= dt * 16.6667;
+        if (this.driftTimer <= 0) {
+          this.driftTimer = 2500 + Math.random() * 3000;
+          const angle = Math.random() * Math.PI * 2;
+          const speed = this.maxSpeed * (0.4 + Math.random() * 0.6);
+          this.driftX = Math.cos(angle) * speed;
+          this.driftY = Math.sin(angle) * speed;
+        }
+        this.vx = approach(this.vx, this.driftX, 0.02, dt);
+        this.vy = approach(this.vy, this.driftY, 0.02, dt);
 
         this.x += this.vx * dt;
         this.y += this.vy * dt;
@@ -118,38 +202,98 @@ const ParticleBackground = () => {
         this.x = Math.min(Math.max(this.x, 0), W);
         this.y = Math.min(Math.max(this.y, 0), H);
 
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const distSq = dx * dx + dy * dy;
-        if (distSq < hoverRadius * hoverRadius) {
-          const dist = Math.sqrt(distSq) || 1;
-          const force = 1 - dist / hoverRadius;
-          this.x -= dx * force * 0.04;
-          this.y -= dy * force * 0.04;
+        if (mouseActive > 0.01) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < hoverRadius * hoverRadius) {
+            const dist = Math.sqrt(distSq) || 1;
+            const force = (1 - dist / hoverRadius) * mouseActive;
+            // Very light pull toward the cursor — just a subtle lean,
+            // not enough to ever drag stars all the way in and clump them.
+            this.x += dx * force * 0.003 * dt;
+            this.y += dy * force * 0.003 * dt;
+          }
         }
 
-        this.alpha += this.twinkleSpeed * dt;
-        if (this.alpha > this.maxAlpha || this.alpha < this.minAlpha) this.twinkleSpeed *= -1;
+        this.twinklePhase += this.twinkleSpeed * dt * 16.6667;
+        const span = (this.maxAlpha - this.minAlpha) / 2;
+        this.alpha = this.minAlpha + span + Math.sin(this.twinklePhase) * span;
       }
 
       draw(time: number) {
-        const sprite = makeGlowSprite(this.coreR, this.glowR, this.tint);
-        ctx!.globalAlpha = this.alpha;
-        ctx!.drawImage(sprite.canvas, this.x - sprite.size / 2, this.y - sprite.size / 2);
+        if (this.isShooting) {
+          const fadeIn = Math.min(1, (this.shootMaxLife - this.shootLife) / 8);
+          const fadeOut = Math.min(1, this.shootLife / (this.shootMaxLife * 0.4));
+          const alpha = Math.min(fadeIn, fadeOut);
 
-        if (this.bright) {
-          // Faint four-point sparkle flare for the brightest stars
-          const flare = (Math.sin(time * 0.001 + this.sparklePhase) * 0.5 + 0.5) * 0.5 + 0.15;
-          const len = this.glowR * 1.6;
-          ctx!.globalAlpha = this.alpha * flare;
-          ctx!.strokeStyle = 'rgba(255,255,255,0.9)';
-          ctx!.lineWidth = 0.6;
+          const mag = Math.hypot(this.shootVx, this.shootVy) || 1;
+          const dirX = this.shootVx / mag;
+          const dirY = this.shootVy / mag;
+          const tailX = this.x - dirX * this.shootLength;
+          const tailY = this.y - dirY * this.shootLength;
+
+          const grad = ctx!.createLinearGradient(this.x, this.y, tailX, tailY);
+          grad.addColorStop(0, `rgba(255,255,255,${0.95 * alpha})`);
+          grad.addColorStop(0.25, `rgba(224,231,255,${0.55 * alpha})`);
+          grad.addColorStop(1, 'rgba(199,210,254,0)');
+
+          ctx!.strokeStyle = grad;
+          ctx!.lineWidth = 1.4 + this.coreR * 0.6;
+          ctx!.lineCap = 'round';
           ctx!.beginPath();
-          ctx!.moveTo(this.x - len, this.y);
-          ctx!.lineTo(this.x + len, this.y);
-          ctx!.moveTo(this.x, this.y - len);
-          ctx!.lineTo(this.x, this.y + len);
+          ctx!.moveTo(this.x, this.y);
+          ctx!.lineTo(tailX, tailY);
           ctx!.stroke();
+
+          const headGrad = ctx!.createRadialGradient(this.x, this.y, 0, this.x, this.y, 4.5);
+          headGrad.addColorStop(0, `rgba(255,255,255,${0.95 * alpha})`);
+          headGrad.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx!.fillStyle = headGrad;
+          ctx!.beginPath();
+          ctx!.arc(this.x, this.y, 4.5, 0, Math.PI * 2);
+          ctx!.fill();
+          return;
+        }
+
+        let boost = 0;
+        if (mouseActive > 0.01) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < coreRadius) {
+            boost = (1 - dist / coreRadius) * mouseActive;
+          }
+        }
+
+        const drawAlpha = Math.min(1, this.alpha + boost * 0.25);
+        const scale = 1 + boost * 0.35;
+        const sprite = makeGlowSprite(this.coreR, this.glowR, this.tint);
+        const drawSize = sprite.size * scale;
+
+        ctx!.globalAlpha = drawAlpha;
+        ctx!.drawImage(
+          sprite.canvas,
+          this.x - drawSize / 2,
+          this.y - drawSize / 2,
+          drawSize,
+          drawSize
+        );
+
+        // Extra soft round glow (no cross/plus shape) so hovered/bright
+        // stars just look like genuinely brighter, bigger stars.
+        if (boost > 0.04) {
+          const pulse = (Math.sin(time * 0.0012 + this.sparklePhase) * 0.5 + 0.5) * 0.3 + 0.7;
+          const extraR = this.glowR * (1.1 + boost * 0.6) * pulse;
+          const haloGrad = ctx!.createRadialGradient(this.x, this.y, 0, this.x, this.y, extraR);
+          haloGrad.addColorStop(0, `rgba(255,255,255,${0.16 * boost})`);
+          haloGrad.addColorStop(0.5, `rgba(224,231,255,${0.08 * boost})`);
+          haloGrad.addColorStop(1, 'rgba(224,231,255,0)');
+          ctx!.globalAlpha = 1;
+          ctx!.fillStyle = haloGrad;
+          ctx!.beginPath();
+          ctx!.arc(this.x, this.y, extraR, 0, Math.PI * 2);
+          ctx!.fill();
         }
         ctx!.globalAlpha = 1;
       }
@@ -189,6 +333,9 @@ const ParticleBackground = () => {
         ctx!.fillRect(0, 0, W, H);
       }
     }
+
+    // A shooting star is just an ordinary Star temporarily put into
+    // "shooting" mode (see Star.startShooting) — no separate object.
 
     function getDocumentSize() {
       const el = document.documentElement;
@@ -261,7 +408,8 @@ const ParticleBackground = () => {
         (grid[idx] || (grid[idx] = [])).push(s);
       }
 
-      ctx!.lineWidth = 0.6;
+      ctx!.lineWidth = 0.5;
+      ctx!.lineCap = 'round';
       for (let cy = 0; cy < rows; cy++) {
         for (let cx = 0; cx < cols; cx++) {
           const idx = cy * cols + cx;
@@ -286,7 +434,31 @@ const ParticleBackground = () => {
                   const distSq = dx * dx + dy * dy;
                   if (distSq < maxLineDistanceSq) {
                     const dist = Math.sqrt(distSq);
-                    ctx!.strokeStyle = `rgba(199,210,254,${0.12 * (1 - dist / maxLineDistance)})`;
+                    let lineBoost = 0;
+                    if (mouseActive > 0.01) {
+                      const mdx1 = mouse.x - s1.x;
+                      const mdy1 = mouse.y - s1.y;
+                      const mdx2 = mouse.x - s2.x;
+                      const mdy2 = mouse.y - s2.y;
+                      const d1 = Math.sqrt(mdx1 * mdx1 + mdy1 * mdy1);
+                      const d2 = Math.sqrt(mdx2 * mdx2 + mdy2 * mdy2);
+                      const closest = Math.min(d1, d2);
+                      if (closest < coreRadius) {
+                        // eased falloff (smoothstep) instead of linear,
+                        // so the boost ramps in/out gently rather than
+                        // creating a hard bright edge near the cursor
+                        const t = 1 - closest / coreRadius;
+                        lineBoost = (t * t * (3 - 2 * t)) * mouseActive;
+                      }
+                    }
+                    // Smoothstep falloff by distance too, for a softer,
+                    // less sharply-cut-off line as it approaches max range.
+                    const rawT = 1 - dist / maxLineDistance;
+                    const smoothT = rawT * rawT * (3 - 2 * rawT);
+                    const baseOpacity = 0.09 * smoothT;
+                    const opacity = Math.min(0.5, baseOpacity + lineBoost * 0.35);
+                    ctx!.strokeStyle = `rgba(205,214,255,${opacity})`;
+                    ctx!.lineWidth = 0.5 + lineBoost * 0.35;
                     ctx!.beginPath();
                     ctx!.moveTo(s1.x, s1.y);
                     ctx!.lineTo(s2.x, s2.y);
@@ -300,9 +472,64 @@ const ParticleBackground = () => {
       }
     }
 
+    function drawCursorCluster() {
+      if (mouseActive < 0.01) return;
+
+      const glowR = coreRadius * 1.2;
+      const gradient = ctx!.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, glowR);
+      gradient.addColorStop(0, `rgba(199,210,254,${0.1 * mouseActive})`);
+      gradient.addColorStop(0.4, `rgba(129,140,248,${0.06 * mouseActive})`);
+      gradient.addColorStop(1, 'rgba(129,140,248,0)');
+      ctx!.fillStyle = gradient;
+      ctx!.beginPath();
+      ctx!.arc(mouse.x, mouse.y, glowR, 0, Math.PI * 2);
+      ctx!.fill();
+
+      ctx!.lineCap = 'round';
+      for (const s of stars) {
+        const dx = s.x - mouse.x;
+        const dy = s.y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < coreRadius) {
+          const rawT = 1 - dist / coreRadius;
+          const t = (rawT * rawT * (3 - 2 * rawT)) * mouseActive; // smoothstep
+          ctx!.strokeStyle = `rgba(214,222,255,${0.08 * t})`;
+          ctx!.lineWidth = 0.35 + t * 0.25;
+          ctx!.beginPath();
+          ctx!.moveTo(mouse.x, mouse.y);
+          ctx!.lineTo(s.x, s.y);
+          ctx!.stroke();
+        }
+      }
+
+      const coreGrad = ctx!.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 7);
+      coreGrad.addColorStop(0, `rgba(255,255,255,${0.4 * mouseActive})`);
+      coreGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx!.fillStyle = coreGrad;
+      ctx!.beginPath();
+      ctx!.arc(mouse.x, mouse.y, 7, 0, Math.PI * 2);
+      ctx!.fill();
+    }
+
+    function maybeSpawnShootingStar(now: number) {
+      if (now >= nextShootingStarAt) {
+        nextShootingStarAt = now + 10000 + Math.random() * 5000; // every 10-15s
+        const candidates = stars.filter((s) => !s.isShooting);
+        if (candidates.length > 0) {
+          const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+          chosen.startShooting();
+        }
+      }
+    }
+
     function animate(now: number) {
       const dt = Math.min(2.5, (now - lastTime) / 16.6667);
       lastTime = now;
+
+      mouse.x = approach(mouse.x, targetMouse.x, 0.18, dt);
+      mouse.y = approach(mouse.y, targetMouse.y, 0.18, dt);
+      const wantsActive = targetMouse.x > -5000 ? 1 : 0;
+      mouseActive = approach(mouseActive, wantsActive, 0.06, dt);
 
       // Deep space base
       ctx!.globalCompositeOperation = 'source-over';
@@ -320,10 +547,15 @@ const ParticleBackground = () => {
       drawConstellationLines();
 
       ctx!.globalCompositeOperation = 'lighter';
+      drawCursorCluster();
+
       for (const s of stars) {
-        s.update(dt);
+        s.update(dt, now);
         s.draw(now);
       }
+
+      maybeSpawnShootingStar(now);
+
       ctx!.globalCompositeOperation = 'source-over';
 
       rafId = requestAnimationFrame(animate);
@@ -333,12 +565,12 @@ const ParticleBackground = () => {
     rafId = requestAnimationFrame(animate);
 
     const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.pageX;
-      mouse.y = e.pageY;
+      targetMouse.x = e.pageX;
+      targetMouse.y = e.pageY;
     };
     const handleMouseLeave = () => {
-      mouse.x = -10000;
-      mouse.y = -10000;
+      targetMouse.x = -10000;
+      targetMouse.y = -10000;
     };
 
     window.addEventListener('resize', scheduleResize, { passive: true });

@@ -2,10 +2,12 @@ import React, { useState } from 'react'
 
 const Timeline = () => {
 
-  const [year, setyear] = useState(2024)
+  const [head, setHead] = useState()
+  const [year, setYear] = useState()
+  const [bio, setBio] = useState()
 
   return (
-    <div>
+    <div className='w-full h-full bg-amber-700'>
       
     </div>
   )
