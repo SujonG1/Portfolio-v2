@@ -59,7 +59,7 @@ const NavMain = () => {
           <span>Resume</span>
         </button>
 
-        <button className="nav-btn px-6 h-10 bg-linear-to-tr from-sky-600 to-purple-800 text-white text-l font-semibold font-poppins rounded-full cursor-pointer hover:from-purple-800 hover:to-sky-600 transition-colors duration-600 ease-in-out">
+        <button className="nav-btn px-6 h-10 bg-linear-to-tr from-sky-600 to-purple-800 text-white text-l font-semibold font-poppins rounded-xl cursor-pointer hover:from-purple-800 hover:to-sky-600 transition-colors duration-600 ease-in-out">
           Hire Me
         </button>
       </div>

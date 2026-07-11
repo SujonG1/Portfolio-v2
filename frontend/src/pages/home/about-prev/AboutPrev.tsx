@@ -2,8 +2,8 @@ import Timeline from "./about-prev-components/Timeline";
 
 const AboutPrev = () => {
   return (
-    <div className="w-full h-dvh z-50 flex ">
-      <div className="h-full w-1/2 p-10 flex flex-col gap-30 ">
+    <div className="w-full h-dvh z-50 flex justify-evenly relative">
+      <div className="h-full w-1/2 p-10 flex flex-col gap-30">
         <div className="h-1/2 w-full pt-6 pl-12">
           <h1 className="font-grotesk text-7xl text-slate-200 font-bold w-full">
             Who I am
@@ -16,7 +16,9 @@ const AboutPrev = () => {
           </p>
         </div>
       </div>
-      <Timeline />
+      <div className="w-1/2 overflow-x-hidden h-full">
+        <Timeline />
+      </div>
     </div>
   );
 };
