@@ -1,15 +1,5 @@
 import { useState } from 'react';
 
-/**
- * ─────────────────────────────────────────────────────────────
- *  DATA ENTRY — edit this array to add / remove / reorder
- *  achievements. That's the only thing you need to touch.
- *
- *  year    -> string or number, shown as the pin label
- *  heading -> short title of the achievement
- *  bio     -> 1-3 sentence description
- * ─────────────────────────────────────────────────────────────
- */
 export interface Achievement {
   year: string;
   heading: string;
@@ -163,6 +153,7 @@ const Timeline = ({ entries = ACHIEVEMENTS }: TimelineProps) => {
                   <p className="text-slate-400 text-xs leading-relaxed">
                     {entry.bio}
                   </p>
+                  <h1>{entry.grade}</h1>
                 </div>
               </div>
             </div>
